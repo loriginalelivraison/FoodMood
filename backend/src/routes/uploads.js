@@ -41,16 +41,16 @@ router.post('/image', authRequired, upload.single('image'), async (req, res) => 
     if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu' })
 
     const stream = cloudinary.uploader.upload_stream(
-      { folder: 'foodgo', resource_type: 'image' },
-      (error, result) => {
-        if (error) {
-          // Log serveur pour debug Heroku
-          console.error('Cloudinary error:', error)
-          return res.status(400).json({ error: error.message || 'Cloudinary error' })
-        }
-        return res.json({ url: result.secure_url })
-      }
-    )
+  { folder: 'foodgo', resource_type: 'image' },
+  (error, result) => {
+    if (error) {
+      console.error('Cloudinary error:', error) // <— LOG
+      return res.status(400).json({ error: error.message || 'Cloudinary error' })
+    }
+    return res.json({ url: result.secure_url })
+  }
+)
+
     stream.end(req.file.buffer)
   } catch (e) {
     console.error('Upload route error:', e)
