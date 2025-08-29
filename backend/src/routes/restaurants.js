@@ -99,7 +99,7 @@ router.put('/:id', authRequired, requireRole('OWNER','ADMIN'), async (req, res) 
     let lat = data.lat ?? undefined
     let lng = data.lng ?? undefined
 
-    // si adresse changée & pas de coords fournies, tente un géocode
+    // si adresse changée & pas de coords fournies, tente géocode
     if ((lat == null || lng == null) && typeof data.address === 'string' && data.address.trim()) {
       try {
         const p = await geocodeAddress(data.address)
@@ -134,7 +134,7 @@ router.delete('/:id', authRequired, requireRole('OWNER','ADMIN'), async (req, re
   }
 })
 
-/* ===== MENU CRUD identique (create / patch / delete) ===== */
+/* ===== MENU CRUD (create / patch / delete) ===== */
 
 const menuSchema = z.object({
   name: z.string().min(2),

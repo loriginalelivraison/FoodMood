@@ -1,4 +1,3 @@
-// src/pages/OwnerDashboard.jsx
 import { useEffect, useState } from 'react'
 import api from '../utils/client.js'
 import { useAuth } from '../auth/useAuth.jsx'
@@ -19,12 +18,16 @@ export default function OwnerDashboard() {
 
   async function load() {
     setMsg('')
-    const all = await api.get('/api/restaurants')
-    setRestaurants(user?.role === 'OWNER' ? all.filter(r => r.ownerId === user?.id) : all)
+    try {
+      const all = await api.get('/api/restaurants')
+      setRestaurants(user?.role === 'OWNER' ? all.filter(r => r.ownerId === user?.id) : all)
+    } catch (e) {
+      setMsg(e?.message || 'Erreur de chargement')
+      setRestaurants([])
+    }
   }
   useEffect(()=>{ load() }, [])
 
-  // --- GEO helpers
   async function geocode(addr) {
     try {
       const r = await api.post('/api/geocode', { address: addr }, token)
@@ -40,7 +43,6 @@ export default function OwnerDashboard() {
     setMsg('')
     try {
       const payload = { ...form }
-      // si pas de lat/lng, on tente de géocoder l’adresse (backup côté back aussi)
       if ((!payload.lat || !payload.lng) && payload.address?.trim()) {
         const p = await geocode(payload.address.trim())
         if (p) { payload.lat = p.lat; payload.lng = p.lng }
@@ -59,7 +61,6 @@ export default function OwnerDashboard() {
     setMsg('')
     try {
       const payload = { ...selected }
-      // si on a une adresse mais pas de coords, tente géocode
       if ((!payload.lat || !payload.lng) && payload.address?.trim()) {
         const p = await geocode(payload.address.trim())
         if (p) { payload.lat = p.lat; payload.lng = p.lng }
@@ -73,8 +74,13 @@ export default function OwnerDashboard() {
 
   async function removeRestaurant(id) {
     if (!confirm('Supprimer ce restaurant ?')) return
-    await api.delete(`/api/restaurants/${id}`, token)
-    setSelected(null); await load()
+    try {
+      await api.delete(`/api/restaurants/${id}`, token)
+      setSelected(null)
+      await load()
+    } catch (e) {
+      setMsg(e?.message || "Suppression échouée")
+    }
   }
 
   // ----- MENU
@@ -82,17 +88,26 @@ export default function OwnerDashboard() {
     e.preventDefault()
     if (!selected) return
     const body = { ...menuForm, priceCents: Number(menuForm.priceCents) }
-    await api.post(`/api/restaurants/${selected.id}/menu`, body, token)
-    setMenuForm({ name: '', description: '', priceCents: 1000, imageUrl: '' })
-    const full = await api.get(`/api/restaurants/${selected.id}`)
-    setSelected(full)
+    try {
+      await api.post(`/api/restaurants/${selected.id}/menu`, body, token)
+      setMenuForm({ name: '', description: '', priceCents: 1000, imageUrl: '' })
+      const full = await api.get(`/api/restaurants/${selected.id}`)
+      setSelected(full)
+    } catch (e) {
+      setMsg(e?.message || "Ajout plat échoué")
+    }
   }
+
   async function softDeleteMenu(id) {
     if (!selected) return
     if (!confirm('Supprimer ce plat ?')) return
-    await api.delete(`/api/restaurants/${selected.id}/menu/${id}`, token)
-    const full = await api.get(`/api/restaurants/${selected.id}`)
-    setSelected(full)
+    try {
+      await api.delete(`/api/restaurants/${selected.id}/menu/${id}`, token)
+      const full = await api.get(`/api/restaurants/${selected.id}`)
+      setSelected(full)
+    } catch (e) {
+      setMsg(e?.message || "Suppression plat échouée")
+    }
   }
 
   return (

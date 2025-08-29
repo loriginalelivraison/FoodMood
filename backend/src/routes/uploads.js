@@ -1,4 +1,3 @@
-// src/routes/uploads.js
 import { Router } from 'express'
 import multer from 'multer'
 import { v2 as cloudinary } from 'cloudinary'
@@ -13,25 +12,39 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-// Multer en mémoire
-const upload = multer({ storage: multer.memoryStorage() })
+// Multer en mémoire (option: limite 10 Mo)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+})
 
-// POST /api/upload/image
+// POST /api/upload/image  (champ: "image")
 router.post('/image', authRequired, upload.single('image'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file' })
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ error: 'Cloudinary non configuré. Définis CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET.' })
+    }
 
-    // Upload via stream
+    if (!req.file) return res.status(400).json({ error: 'No file' })
+    if (!req.file.mimetype?.startsWith?.('image/')) {
+      return res.status(400).json({ error: 'Format non supporté (image requise)' })
+    }
+
     const stream = cloudinary.uploader.upload_stream(
       { folder: 'foodgo', resource_type: 'image' },
       (error, result) => {
-        if (error) return res.status(400).json({ error: error.message || 'Cloudinary error' })
+        if (error) {
+          console.error('Cloudinary error:', error)
+          return res.status(400).json({ error: error.message || 'Cloudinary error' })
+        }
         return res.json({ url: result.secure_url })
       }
     )
+
     stream.end(req.file.buffer)
   } catch (e) {
-    res.status(400).json({ error: e.message })
+    console.error('Upload route error:', e)
+    res.status(400).json({ error: e.message || 'Upload failed' })
   }
 })
 

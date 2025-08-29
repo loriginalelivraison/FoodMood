@@ -1,4 +1,3 @@
-// backend/server.js
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
@@ -16,29 +15,35 @@ import courierRoutes from './src/routes/couriers.js'
 import uploadRoutes from './src/routes/uploads.js'
 import cartRoutes from './src/routes/cart.js'
 
-// ✅ Import nécessaire pour servir le frontend (React build)
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-// si tu utilises ES modules, __dirname n’existe pas → on le recrée
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 8080
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "";
+
+// ✅ CORS : accepte une liste séparée par des virgules, ou tout s’il est vide
+const rawOrigins = (process.env.CORS_ORIGIN || '').trim()
+const origins = rawOrigins
+  ? rawOrigins.split(',').map(s => s.trim())
+  : true // accepte tout en fallback (utile sur Heroku si tu n'as pas encore mis la variable)
 
 app.use(cors({
-  origin: CORS_ORIGIN,
+  origin: origins,
   credentials: true,
 }))
-app.use(express.json({ limit: '5mb' }))
+
+// ⬆️ Limites un peu plus grandes (utile si tu envoies des dataURL côté front pour autre chose)
+app.use(express.json({ limit: '15mb' }))
+app.use(express.urlencoded({ extended: true, limit: '15mb' }))
 app.use(cookieParser())
 
-// Test de santé
+// Health
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
-// Routes API
+// API
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/restaurants', restaurantRoutes)
@@ -48,18 +53,17 @@ app.use('/api/couriers', courierRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/cart', cartRoutes)
 
+// Socket.IO
 const server = http.createServer(app)
 const io = new SocketIOServer(server, {
-  cors: { origin: CORS_ORIGIN, credentials: true }
+  cors: { origin: origins, credentials: true }
 })
 app.set('io', io)
-
-// 🔔 room utils
 io.on('connection', socket => {
   socket.on('join', room => socket.join(room))
 })
 
-// 🔔 Helper de notif ciblée
+// 🔔 Helper de notif ciblée (déjà utilisé par le reste)
 app.set('notify', (targets, payload) => {
   try {
     for (const uid of (targets || [])) {
@@ -68,7 +72,7 @@ app.set('notify', (targets, payload) => {
   } catch (e) { console.error('notify error:', e?.message || e) }
 })
 
-// Auto archive DELIVERED -> ARCHIVED after 15 minutes
+// Auto archive DELIVERED -> ARCHIVED après 15 min
 const ARCHIVE_AFTER_MINUTES = 15
 setInterval(async () => {
   try {
@@ -80,10 +84,9 @@ setInterval(async () => {
   } catch (e) { console.error('Auto-archive error:', e?.message || e) }
 }, 60 * 1000)
 
-// ✅ Static files (frontend React build)
+// Static React (build)
 app.use(express.static(path.join(__dirname, "../frontend/dist")))
-
-app.get("*", (req, res) => {
+app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/dist/index.html"))
 })
 
