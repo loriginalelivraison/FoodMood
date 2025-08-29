@@ -1,0 +1,8 @@
+{
+  "name": "foodmood-root",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
