@@ -1,11 +1,14 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080"
 
-
 async function request(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, opts)
   const text = await res.text()
   let json = null
-  try { json = text ? JSON.parse(text) : null } catch { /* HTML error pages -> throw below */ }
+  try {
+    json = text ? JSON.parse(text) : null
+  } catch {
+    /* HTML error pages -> throw below */
+  }
   if (!res.ok) {
     const msg = json?.error || json?.message || `HTTP ${res.status}`
     throw new Error(msg)
@@ -60,14 +63,24 @@ const api = {
       credentials: "include",
     }),
 
-  // ✅ upload multipart (ne pas fixer Content-Type manuellement)
-  upload: (path, formData, token) =>
-    request(path, {
+  // ✅ Upload avec FormData → bypass `request` pour ne pas forcer Content-Type
+  upload: async (path, formData, token) => {
+    const res = await fetch(`${API_URL}${path}`, {
       method: "POST",
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // ne surtout pas fixer Content-Type → fetch le gère automatiquement
+      },
       body: formData,
       credentials: "include",
-    }),
+    })
+    const json = await res.json().catch(() => null)
+    if (!res.ok) {
+      const msg = json?.error || json?.message || `HTTP ${res.status}`
+      throw new Error(msg)
+    }
+    return json
+  },
 }
 
 export default api
