@@ -24,18 +24,18 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 8080
 
-// ✅ CORS : accepte une liste séparée par des virgules, ou tout s’il est vide
+// ✅ CORS : accepte liste séparée par virgules, sinon accepte tout
 const rawOrigins = (process.env.CORS_ORIGIN || '').trim()
 const origins = rawOrigins
   ? rawOrigins.split(',').map(s => s.trim())
-  : true // accepte tout en fallback (utile sur Heroku si tu n'as pas encore mis la variable)
+  : true
 
 app.use(cors({
   origin: origins,
   credentials: true,
 }))
 
-// ⬆️ Limites un peu plus grandes (utile si tu envoies des dataURL côté front pour autre chose)
+// middlewares
 app.use(express.json({ limit: '15mb' }))
 app.use(express.urlencoded({ extended: true, limit: '15mb' }))
 app.use(cookieParser())
@@ -43,7 +43,7 @@ app.use(cookieParser())
 // Health
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
-// API
+// Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/restaurants', restaurantRoutes)
@@ -63,7 +63,7 @@ io.on('connection', socket => {
   socket.on('join', room => socket.join(room))
 })
 
-// 🔔 Helper de notif ciblée (déjà utilisé par le reste)
+// 🔔 notifications
 app.set('notify', (targets, payload) => {
   try {
     for (const uid of (targets || [])) {
