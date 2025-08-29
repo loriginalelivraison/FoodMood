@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080"
 
+
 async function request(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, opts)
   const text = await res.text()
