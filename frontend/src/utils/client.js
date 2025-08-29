@@ -1,5 +1,6 @@
 // src/utils/client.js
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_URL =
+  import.meta.env.VITE_API_URL || window.location.origin || 'http://localhost:8080'
 
 async function request(method, path, body, token) {
   const headers = { 'Content-Type': 'application/json' }
@@ -23,7 +24,7 @@ async function request(method, path, body, token) {
 // ➕ upload multipart/form-data
 async function upload(path, formData, token) {
   const headers = {}
-  if (token) headers.Authorization = `Bearer ${token}` // NE PAS définir Content-Type (laisse le navigateur le faire)
+  if (token) headers.Authorization = `Bearer ${token}` // laisse le navigateur définir Content-Type
 
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
@@ -46,7 +47,7 @@ const api = {
   put: (path, body, token) => request('PUT', path, body, token),
   patch: (path, body, token) => request('PATCH', path, body, token),
   delete: (path, token) => request('DELETE', path, null, token),
-  upload, // 👈 nouveau
+  upload,
 }
 
 export default api
