@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 8080
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "";
 
 app.use(cors({
   origin: CORS_ORIGIN,
