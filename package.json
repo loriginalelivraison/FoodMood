@@ -6,6 +6,7 @@
     "frontend"
   ],
   "scripts": {
-    "start": "cd backend && npm start"
+    "start": "node backend/server.js"
+
   }
 }
