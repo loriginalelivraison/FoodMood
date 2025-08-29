@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  OWNER
+  COURIER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  PICKED_UP
+  DELIVERING
+  DELIVERED
+  CANCELED
+  ARCHIVED
+}
+
+enum Category {
+  PIZZA
+  BURGER
+  JAPONAIS
+  PATISSERIE
+  AUTRE
+}
+
+model User {
+  id            Int              @id @default(autoincrement())
+  phone         String           @unique
+  passwordHash  String
+  name          String?
+  role          Role             @default(CUSTOMER)
+  restaurants   Restaurant[]     @relation("OwnerRestaurants")
+  orders        Order[]          @relation("CustomerOrders")
+  courierOrders Order[]          @relation("CourierOrders")
+  courierPos    CourierPosition?
+  cart          Cart?
+  // ⬇️ AJOUTE CETTE LIGNE
+  notifications Notification[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model Restaurant {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  imageUrl    String?
+  address     String
+  category    Category @default(AUTRE)
+  isOpen      Boolean  @default(true)
+
+  // coordonnées pour carte / proximité
+  lat Float?
+  lng Float?
+
+  owner     User       @relation("OwnerRestaurants", fields: [ownerId], references: [id])
+  ownerId   Int
+  menu      MenuItem[]
+  orders    Order[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model MenuItem {
+  id           Int        @id @default(autoincrement())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId Int
+  name         String
+  description  String?
+  imageUrl     String?
+  priceCents   Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  customer        User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  customerId      Int
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurantId    Int
+  courier         User?       @relation("CourierOrders", fields: [courierId], references: [id])
+  courierId       Int?
+  status          OrderStatus @default(PENDING)
+  deliveryAddress String
+  // coordonnées géocodées (si disponibles)
+  deliveryLat     Float?
+  deliveryLng     Float?
+  totalCents      Int
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId Int
+  quantity   Int
+  priceCents Int
+}
+
+model CourierPosition {
+  id        Int      @id @default(autoincrement())
+  courier   User     @relation(fields: [courierId], references: [id])
+  courierId Int      @unique
+  lat       Float
+  lng       Float
+  updatedAt DateTime @updatedAt
+}
+
+model Cart {
+  id           Int        @id @default(autoincrement())
+  user         User       @relation(fields: [userId], references: [id])
+  userId       Int        @unique
+  restaurantId Int?
+  items        CartItem[]
+  updatedAt    DateTime   @updatedAt
+}
+
+model CartItem {
+  id         Int      @id @default(autoincrement())
+  cart       Cart     @relation(fields: [cartId], references: [id])
+  cartId     Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId Int
+  quantity   Int
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  // ⬇️ relation vers User (déjà mise)
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  type      String
+  title     String
+  message   String
+  orderId   Int?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,17 @@
+# Node / backend
+node_modules/
+npm-debug.log*
+yarn*.log
+pnpm-lock.yaml
+
+# Front
+client/node_modules/
+client/dist/
+client/build/
+
+# Général
+.env
+.env.*
+.DS_Store
+coverage/
+tmp/
