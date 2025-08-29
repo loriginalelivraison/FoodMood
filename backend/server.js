@@ -80,10 +80,11 @@ setInterval(async () => {
   } catch (e) { console.error('Auto-archive error:', e?.message || e) }
 }, 60 * 1000)
 
-// ✅ Servir le build React
-app.use(express.static(path.join(__dirname, '../frontend/dist')))
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'))
+// ✅ Static files (frontend React build)
+app.use(express.static(path.join(__dirname, "../frontend/dist")))
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"))
 })
 
 server.listen(PORT, () => console.log(`🚀 API running on http://localhost:${PORT}`))
