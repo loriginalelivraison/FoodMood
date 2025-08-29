@@ -4,5 +4,9 @@
   "workspaces": [
     "backend",
     "frontend"
-  ]
+  ],
+  "scripts": {
+    "start": "cd backend && npm start"
+  }
 }
+
