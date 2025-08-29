@@ -59,7 +59,7 @@ const api = {
       credentials: "include",
     }),
 
-  // ✅ NOUVEAU : upload multipart, NE PAS fixer Content-Type manuellement
+  // ✅ upload multipart (ne pas fixer Content-Type manuellement)
   upload: (path, formData, token) =>
     request(path, {
       method: "POST",
