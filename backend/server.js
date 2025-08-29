@@ -16,6 +16,14 @@ import courierRoutes from './src/routes/couriers.js'
 import uploadRoutes from './src/routes/uploads.js'
 import cartRoutes from './src/routes/cart.js'
 
+// ✅ Import nécessaire pour servir le frontend (React build)
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+// si tu utilises ES modules, __dirname n’existe pas → on le recrée
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const app = express()
 const PORT = process.env.PORT || 8080
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'
@@ -27,8 +35,10 @@ app.use(cors({
 app.use(express.json({ limit: '5mb' }))
 app.use(cookieParser())
 
+// Test de santé
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
+// Routes API
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/restaurants', restaurantRoutes)
@@ -45,13 +55,11 @@ const io = new SocketIOServer(server, {
 app.set('io', io)
 
 // 🔔 room utils
-// - côté front: socket.emit('join', `user:${user.id}`)
-// - côté front OrderDetail: socket.emit('join', `order:${orderId}`)
 io.on('connection', socket => {
   socket.on('join', room => socket.join(room))
 })
 
-// 🔔 Helper de notif ciblée (envoie aux rooms user:<id>)
+// 🔔 Helper de notif ciblée
 app.set('notify', (targets, payload) => {
   try {
     for (const uid of (targets || [])) {
@@ -72,4 +80,10 @@ setInterval(async () => {
   } catch (e) { console.error('Auto-archive error:', e?.message || e) }
 }, 60 * 1000)
 
-server.listen(PORT, () => console.log(`API running on http://localhost:${PORT}`))
+// ✅ Servir le build React
+app.use(express.static(path.join(__dirname, '../frontend/dist')))
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'))
+})
+
+server.listen(PORT, () => console.log(`🚀 API running on http://localhost:${PORT}`))
