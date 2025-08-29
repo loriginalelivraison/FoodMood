@@ -63,13 +63,13 @@ const api = {
       credentials: "include",
     }),
 
-  // ✅ Upload avec FormData → bypass `request` pour ne pas forcer Content-Type
+  // ✅ Upload multipart (ne pas fixer Content-Type manuellement)
   upload: async (path, formData, token) => {
     const res = await fetch(`${API_URL}${path}`, {
       method: "POST",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        // ne surtout pas fixer Content-Type → fetch le gère automatiquement
+        // ⚠️ pas de "Content-Type"
       },
       body: formData,
       credentials: "include",

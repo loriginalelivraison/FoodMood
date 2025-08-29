@@ -34,7 +34,7 @@ app.use(cors({
   origin: origins,
   credentials: true,
 }))
-
+app.use('/api/upload', uploadRoutes)
 // middlewares
 app.use(express.json({ limit: '15mb' }))
 app.use(express.urlencoded({ extended: true, limit: '15mb' }))
@@ -51,7 +51,7 @@ console.log("✅ Route /api/restaurants montée")
 app.use('/api/orders', orderRoutes)
 app.use('/api/quotes', quoteRoutes)
 app.use('/api/couriers', courierRoutes)
-app.use('/api/upload', uploadRoutes)
+
 app.use('/api/cart', cartRoutes)
 
 // Socket.IO
