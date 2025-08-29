@@ -1,37 +1,59 @@
-// src/components/ImageUploader.jsx
-import { useState } from 'react'
-import api from '../utils/client.js'
-import { useAuth } from '../auth/useAuth.jsx'
+import { useRef, useState } from "react"
+import { useAuth } from "../auth/useAuth.jsx"
+import api from "../utils/client.js"
 
-export default function ImageUploader({ onUploaded, label = 'Téléverser une image' }) {
+export default function ImageUploader({ onUploaded, label = "Téléverser une image" }) {
+  const inputRef = useRef(null)
   const { token } = useAuth()
-  const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+  const [fileName, setFileName] = useState("")
 
   async function onPick(e) {
     const file = e.target.files?.[0]
+    setError("")
     if (!file) return
-    setMsg('')
-    setLoading(true)
+    setFileName(file.name)
+
+    // simple garde-fou
+    if (!/^image\/(png|jpe?g|webp|gif|svg\+xml)$/.test(file.type)) {
+      setError("Format non supporté (png, jpg, webp, gif, svg)")
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Taille max 5 Mo")
+      return
+    }
+
+    const fd = new FormData()
+    // ⚠️ la clé DOIT s'appeler "image" pour matcher upload.single('image')
+    fd.append("image", file, file.name)
+
     try {
-      const fd = new FormData()
-      fd.append('image', file) // champ "image" attendu par l’API
-      const res = await api.upload('/api/upload/image', fd, token)
-      // res = { url: 'https://res.cloudinary.com/.../image/upload/...' }
-      onUploaded?.(res.url)
-    } catch (err) {
-      setMsg(err.message || 'Upload failed')
+      setBusy(true)
+      const res = await api.upload("/api/upload/image", fd, token)
+      if (res?.url) onUploaded?.(res.url)
+      else setError("Upload échoué")
+    } catch (e) {
+      setError(e?.message || "Upload échoué")
     } finally {
-      setLoading(false)
+      setBusy(false)
     }
   }
 
   return (
-    <div className="space-y-2">
-      <label className="label">{label}</label>
-      <input type="file" accept="image/*" onChange={onPick} disabled={loading} />
-      {loading && <div className="text-xs text-zinc-500">Envoi…</div>}
-      {msg && <div className="text-xs text-red-600">{msg}</div>}
+    <div>
+      <div className="text-sm mb-1">{label}</div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        onChange={onPick}
+        className="block w-full text-sm file:mr-3 file:rounded-lg file:border file:px-3 file:py-2 file:bg-white hover:file:bg-zinc-50"
+      />
+      {fileName && <div className="mt-1 text-xs text-zinc-500">{fileName}</div>}
+      {busy && <div className="mt-1 text-xs text-zinc-500">Envoi…</div>}
+      {error && <div className="mt-1 text-xs text-red-600">{error}</div>}
     </div>
   )
 }
