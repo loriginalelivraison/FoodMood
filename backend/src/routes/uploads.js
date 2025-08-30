@@ -29,8 +29,8 @@ const upload = multer({
   },
 })
 
-// ✅ upload avant auth (multer doit parser FormData AVANT authRequired)
-router.post("/image", upload.single("image"), authRequired, async (req, res) => {
+// ⚠️ authRequired AVANT multer
+router.post("/image", authRequired, upload.single("image"), async (req, res) => {
   try {
     if (!HAS_CLOUDINARY) {
       return res.status(500).json({ error: "Cloudinary non configuré" })
@@ -43,8 +43,9 @@ router.post("/image", upload.single("image"), authRequired, async (req, res) => 
 
     console.log("✅ Fichier reçu:", req.file.originalname, req.file.mimetype, req.file.size)
 
+    // Upload vers Cloudinary
     const stream = cloudinary.uploader.upload_stream(
-      { folder: "foodgo", resource_type: "image" },
+      { folder: "foodmood", resource_type: "image" },
       (error, result) => {
         if (error) {
           console.error("❌ Cloudinary error:", error)
