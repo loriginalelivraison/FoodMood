@@ -1,14 +1,11 @@
+// src/utils/client.js
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080"
 
 async function request(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, opts)
   const text = await res.text()
   let json = null
-  try {
-    json = text ? JSON.parse(text) : null
-  } catch {
-    /* HTML error pages -> throw below */
-  }
+  try { json = text ? JSON.parse(text) : null } catch { /* HTML error pages -> throw below */ }
   if (!res.ok) {
     const msg = json?.error || json?.message || `HTTP ${res.status}`
     throw new Error(msg)
@@ -63,26 +60,25 @@ const api = {
       credentials: "include",
     }),
 
-  // ✅ Upload multipart → on bypass `request()` !
+  // ✅ upload multipart (direct fetch, sans request())
   upload: async (path, formData, token) => {
-  const res = await fetch(`${API_URL}${path}`, {
-    method: "POST",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      // ❌ NE PAS mettre Content-Type → laissé à fetch pour FormData
-    },
-    body: formData,
-    credentials: "include",
-  })
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // ❌ NE PAS mettre Content-Type → laissé à fetch pour FormData
+      },
+      body: formData,
+      credentials: "include",
+    })
 
-  const json = await res.json().catch(() => null)
-  if (!res.ok) {
-    const msg = json?.error || json?.message || `HTTP ${res.status}`
-    throw new Error(msg)
-  }
-  return json
-},
-
+    const json = await res.json().catch(() => null)
+    if (!res.ok) {
+      const msg = json?.error || json?.message || `HTTP ${res.status}`
+      throw new Error(msg)
+    }
+    return json
+  },
 }
 
 export default api
