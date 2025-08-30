@@ -1,3 +1,4 @@
+// src/routes/uploads.js
 import { Router } from "express"
 import multer from "multer"
 import { v2 as cloudinary } from "cloudinary"
@@ -29,7 +30,28 @@ const upload = multer({
   },
 })
 
-// ⚠️ authRequired AVANT multer
+/**
+ * ✅ Route DEBUG : pour vérifier que multer reçoit bien un fichier
+ * Pas d'auth, pas de Cloudinary
+ */
+router.post("/debug", upload.single("image"), (req, res) => {
+  if (!req.file) {
+    console.error("❌ DEBUG: req.file est vide")
+    return res.status(400).json({ error: "Aucun fichier reçu (debug)" })
+  }
+
+  console.log("✅ DEBUG fichier reçu:", req.file.originalname, req.file.mimetype, req.file.size)
+  return res.json({
+    ok: true,
+    name: req.file.originalname,
+    size: req.file.size,
+    mimetype: req.file.mimetype,
+  })
+})
+
+/**
+ * ✅ Route CLOUDINARY avec auth
+ */
 router.post("/image", authRequired, upload.single("image"), async (req, res) => {
   try {
     if (!HAS_CLOUDINARY) {
@@ -43,9 +65,8 @@ router.post("/image", authRequired, upload.single("image"), async (req, res) => 
 
     console.log("✅ Fichier reçu:", req.file.originalname, req.file.mimetype, req.file.size)
 
-    // Upload vers Cloudinary
     const stream = cloudinary.uploader.upload_stream(
-      { folder: "foodmood", resource_type: "image" },
+      { folder: "foodgo", resource_type: "image" },
       (error, result) => {
         if (error) {
           console.error("❌ Cloudinary error:", error)
