@@ -63,24 +63,26 @@ const api = {
       credentials: "include",
     }),
 
-  // ✅ Upload multipart (ne pas fixer Content-Type manuellement)
+  // ✅ Upload multipart → on bypass `request()` !
   upload: async (path, formData, token) => {
-    const res = await fetch(`${API_URL}${path}`, {
-      method: "POST",
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        // ⚠️ pas de "Content-Type"
-      },
-      body: formData,
-      credentials: "include",
-    })
-    const json = await res.json().catch(() => null)
-    if (!res.ok) {
-      const msg = json?.error || json?.message || `HTTP ${res.status}`
-      throw new Error(msg)
-    }
-    return json
-  },
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // ❌ NE PAS mettre Content-Type → laissé à fetch pour FormData
+    },
+    body: formData,
+    credentials: "include",
+  })
+
+  const json = await res.json().catch(() => null)
+  if (!res.ok) {
+    const msg = json?.error || json?.message || `HTTP ${res.status}`
+    throw new Error(msg)
+  }
+  return json
+},
+
 }
 
 export default api
