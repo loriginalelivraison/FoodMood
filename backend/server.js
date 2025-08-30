@@ -34,8 +34,13 @@ app.use(cors({
   origin: origins,
   credentials: true,
 }))
+
+/* ======================
+   ⚠️ Upload doit passer AVANT express.json()
+   ====================== */
 app.use('/api/upload', uploadRoutes)
-// middlewares
+
+// middlewares JSON + URLENCODED
 app.use(express.json({ limit: '15mb' }))
 app.use(express.urlencoded({ extended: true, limit: '15mb' }))
 app.use(cookieParser())
@@ -43,7 +48,7 @@ app.use(cookieParser())
 // Health
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
-// Routes
+// Routes principales
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/restaurants', restaurantRoutes)
@@ -51,7 +56,6 @@ console.log("✅ Route /api/restaurants montée")
 app.use('/api/orders', orderRoutes)
 app.use('/api/quotes', quoteRoutes)
 app.use('/api/couriers', courierRoutes)
-
 app.use('/api/cart', cartRoutes)
 
 // Socket.IO
