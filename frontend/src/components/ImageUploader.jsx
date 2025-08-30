@@ -10,36 +10,40 @@ export default function ImageUploader({ onUploaded, label = "Téléverser une im
   const [fileName, setFileName] = useState("")
 
   async function onPick(e) {
-    const file = e.target.files?.[0]
-    setError("")
-    if (!file) return
-    setFileName(file.name)
+  const file = e.target.files?.[0]
+  setError("")
+  if (!file) return
+  setFileName(file.name)
 
-    // simple garde-fou
-    if (!/^image\/(png|jpe?g|webp|gif|svg\+xml)$/.test(file.type)) {
-      setError("Format non supporté (png, jpg, webp, gif, svg)")
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Taille max 5 Mo")
-      return
-    }
-
-    const fd = new FormData()
-    // ⚠️ la clé DOIT s'appeler "image" pour matcher upload.single('image')
-    fd.append("image", file, file.name)
-
-    try {
-      setBusy(true)
-      const res = await api.upload("/api/upload/image", fd, token)
-      if (res?.url) onUploaded?.(res.url)
-      else setError("Upload échoué")
-    } catch (e) {
-      setError(e?.message || "Upload échoué")
-    } finally {
-      setBusy(false)
-    }
+  // simple garde-fou
+  if (!/^image\/(png|jpe?g|webp|gif|svg\+xml)$/.test(file.type)) {
+    setError("Format non supporté (png, jpg, webp, gif, svg)")
+    return
   }
+  if (file.size > 5 * 1024 * 1024) {
+    setError("Taille max 5 Mo")
+    return
+  }
+
+  const fd = new FormData()
+  fd.append("image", file, file.name)
+
+  // ✅ Debug log : vérifier ce que le FormData contient
+  for (const [key, value] of fd.entries()) {
+    console.log("➡️ FormData:", key, value)
+  }
+
+  try {
+    setBusy(true)
+    const res = await api.upload("/api/upload/image", fd, token)
+    if (res?.url) onUploaded?.(res.url)
+    else setError("Upload échoué")
+  } catch (e) {
+    setError(e?.message || "Upload échoué")
+  } finally {
+    setBusy(false)
+  }
+}
 
   return (
     <div>
