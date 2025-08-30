@@ -5,7 +5,7 @@ import { authRequired } from "../middleware/auth.js"
 
 const router = Router()
 
-// ✅ Vérif de config Cloudinary
+// Vérif config Cloudinary
 const HAS_CLOUDINARY =
   !!process.env.CLOUDINARY_CLOUD_NAME &&
   !!process.env.CLOUDINARY_API_KEY &&
@@ -22,21 +22,18 @@ if (HAS_CLOUDINARY) {
 // Multer en mémoire
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 Mo max
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ok = /^image\/(png|jpe?g|webp|gif|svg\+xml)$/.test(file.mimetype)
     cb(ok ? null : new Error("Format image non supporté"))
   },
 })
 
-// ✅ POST /api/upload/image
-router.post("/image", authRequired, upload.single("image"), async (req, res) => {
+// ✅ upload avant auth (multer doit parser FormData AVANT authRequired)
+router.post("/image", upload.single("image"), authRequired, async (req, res) => {
   try {
     if (!HAS_CLOUDINARY) {
-      return res.status(500).json({
-        error:
-          "Cloudinary non configuré. Définis CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET.",
-      })
+      return res.status(500).json({ error: "Cloudinary non configuré" })
     }
 
     if (!req.file) {
@@ -46,7 +43,6 @@ router.post("/image", authRequired, upload.single("image"), async (req, res) => 
 
     console.log("✅ Fichier reçu:", req.file.originalname, req.file.mimetype, req.file.size)
 
-    // Upload vers Cloudinary
     const stream = cloudinary.uploader.upload_stream(
       { folder: "foodgo", resource_type: "image" },
       (error, result) => {
