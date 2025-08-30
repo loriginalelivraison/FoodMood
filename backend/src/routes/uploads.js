@@ -40,9 +40,11 @@ router.post("/image", authRequired, upload.single("image"), async (req, res) => 
     }
 
     if (!req.file) {
-      console.error("❌ req.file est vide")
+      console.error("❌ req.file est vide !")
       return res.status(400).json({ error: "Aucun fichier reçu" })
     }
+
+    console.log("✅ Fichier reçu:", req.file.originalname, req.file.mimetype, req.file.size)
 
     // Upload vers Cloudinary
     const stream = cloudinary.uploader.upload_stream(
